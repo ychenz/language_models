@@ -224,14 +224,14 @@ class GenerativeGRUModel(object):
         else:
             cell = GRUCell
 
-        self._initial_state = cell.zero_state(batch_size, tf.float32)  # This created initial state across whole batch size,
+        self._initial_state = cell.zero_state(batch_size, tf.float16)  # This created initial state across whole batch size,
         # equals op:  init_state = tf.get_variable('init_state', [1, hidden_size], initializer=tf.constant_initializer(0.0))
         # init_state = tf.tile(init_state, [batch_size, 1])
 
         # build word embedding layer
         with tf.device("/cpu:0"):
             embedding = tf.get_variable(
-                "embedding", [vocabulary_size, state_size], dtype=tf.float32)
+                "embedding", [vocabulary_size, state_size], dtype=tf.float16)
             inputs = tf.nn.embedding_lookup(embedding, inputs)
 
         if is_training and keep_prob < 1:
@@ -244,8 +244,8 @@ class GenerativeGRUModel(object):
                                                          initial_state=self._initial_state)
         rnn_outputs = tf.reshape(tf.concat(axis=1, values=rnn_outputs), [-1, state_size])  # shape: [（batch_size*max(seq_len)）x state_size]
         softmax_w = tf.get_variable(
-            "softmax_w", [state_size, vocabulary_size], dtype=tf.float32)
-        softmax_b = tf.get_variable("softmax_b", [vocabulary_size], dtype=tf.float32)
+            "softmax_w", [state_size, vocabulary_size], dtype=tf.float16)
+        softmax_b = tf.get_variable("softmax_b", [vocabulary_size], dtype=tf.float16)
         logits = tf.matmul(rnn_outputs, softmax_w) + softmax_b # logits shape: [batch_size*max(seq_len)）x state_size]
 
         # predict
@@ -254,7 +254,7 @@ class GenerativeGRUModel(object):
         # convert labels to one-hot vectors
         labels = tf.one_hot(tf.reshape(labels, [-1]),depth=vocabulary_size,axis=-1)
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels,name=None)
-        self._cost = cost = tf.reduce_sum(loss) / tf.reduce_sum(tf.cast(seq_len, tf.float32))  # average loss across all valid predictions
+        self._cost = cost = tf.reduce_sum(loss) / tf.reduce_sum(tf.cast(seq_len, tf.float16))  # average loss across all valid predictions
         self._final_state = state
 
         if not is_training:
@@ -263,7 +263,7 @@ class GenerativeGRUModel(object):
         self._lr = tf.Variable(config.learning_rate, trainable=False)
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars), config.max_grad_norm)
-        optimizer = tf.train.AdamOptimizer(self._lr)
+        optimizer = tf.train.AdamOptimizer(self._lr,epsilon=1e-4)  # slightly larger epsilon to avoid numerical instability with zero moments with float16
         self._train_op = optimizer.apply_gradients(
             zip(grads, tvars))
 
@@ -312,7 +312,6 @@ def main(_):
         loss_value = 0
         batch_cnt = 0
         sv = tf.train.Supervisor(logdir='checkpoints')
-        feed_dict={}
         with sv.managed_session() as session:
             while reddit_parser.epoch < config.max_epoch:
                 batch_data = reddit_parser.next_batch()  # generate batch of training data
@@ -332,7 +331,6 @@ def main(_):
                 print("Cost at batch %d: %f" % (batch_cnt, loss_value))
                 batch_cnt += 1
 
-            loss_value = session.run(model.cost, feed_dict=feed_dict)
             save_path = './models/rnn-model'
             print("Saving model to %s" % save_path)
             sv.saver.save(session, save_path, global_step=sv.global_step)
