@@ -22,7 +22,7 @@ class Config(object):
     batch_size = 40
     embedding_size = hidden_size = 200  # size of word's embedding vector
     num_layers = 2  # not used, single layer for now
-    lr_decay = 0.8
+    lr_decay = 0.6
     keep_prob = 0.5  # rate of keeping a neuron for dropout operation
 
     init_scale = 0.1  #random uniform initializer
@@ -365,6 +365,10 @@ def main(_):
                 if batch_data is None:
                     print("Cost at epoch %d: %f" % (reddit_parser.epoch, loss_value))
                     print("Training time for epoch %d: %f seconds" % (reddit_parser.epoch, time.time() - start_time))
+                    lr_rate = config.learning_rate * config.lr_decay
+                    print("Decreasing learning rate from %f to %f" % (config.learning_rate, lr_rate))
+                    model.assign_lr(session, lr_rate)
+                    config.learning_rate = lr_rate
                     continue
                 else:
                     x, y, seq_len = batch_data
@@ -381,7 +385,7 @@ def main(_):
                 batch_cnt += 1
 
                 # adjusting learning rate if overshoot
-                if prev_cost != 0 and loss_value - prev_cost > 0.5:
+                if prev_cost != 0 and loss_value - prev_cost > 2:
                     print("Cost at batch %d: %f increased from %f" % (batch_cnt, loss_value, prev_cost))
                     lr_rate = config.learning_rate * config.lr_decay
                     print("Decreasing learning rate from %f to %f" % (config.learning_rate, lr_rate))
@@ -389,7 +393,7 @@ def main(_):
                     config.learning_rate = lr_rate
                 prev_cost = loss_value
 
-                if batch_cnt % 500 == 0 and batch_cnt != 0:
+                if batch_cnt % 100 == 0 and batch_cnt != 0:
                     summaries = session.run(model.summary_op,feed_dict=feed_dict)
                     sv.summary_computed(session, summaries)
                     print("Cost at batch %d: %f" % (batch_cnt, loss_value))
@@ -399,11 +403,6 @@ def main(_):
             print("Saving model to %s" % save_path)
             sv.saver.save(session, save_path, global_step=sv.global_step)
 
-        # state = session.run(model.initial_state)
-        # pred = session.run(model.predictions)
-        # cost = session.run(model.cost)
-        # print("Cost: %f" % cost)
-        # print(pred)
 
 def test_parser():
     config = Config()
