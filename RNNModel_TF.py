@@ -11,6 +11,8 @@ import numpy as np
 import time
 import math
 
+from ModelReader import freeze_graph
+
 # Download nltk corpus and tagger
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
@@ -22,7 +24,7 @@ class Config(object):
     batch_size = 40
     embedding_size = hidden_size = 200  # size of word's embedding vector
     num_layers = 2  # not used, single layer for now
-    lr_decay = 0.6
+    lr_decay = 0.5
     keep_prob = 0.5  # rate of keeping a neuron for dropout operation
 
     init_scale = 0.1  #random uniform initializer
@@ -263,7 +265,8 @@ class GenerativeGRUModel(object):
         logits = tf.matmul(rnn_outputs, softmax_w) + softmax_b # logits shape: [batch_size*max(seq_len)）x state_size]
 
         # predict
-        self._predictions = tf.nn.softmax(logits)
+        with tf.variable_scope("Output"):
+            self._predictions = tf.nn.softmax(logits,name="Prediction")
 
         # convert labels to one-hot vectors
         labels = tf.one_hot(tf.reshape(self._labels, [-1]), depth=vocabulary_size, axis=-1)
@@ -384,14 +387,14 @@ def main(_):
                 # print("Cost at batch %d: %f" % (batch_cnt, loss_value))
                 batch_cnt += 1
 
-                # adjusting learning rate if overshoot
-                if prev_cost != 0 and loss_value - prev_cost > 2:
-                    print("Cost at batch %d: %f increased from %f" % (batch_cnt, loss_value, prev_cost))
-                    lr_rate = config.learning_rate * config.lr_decay
-                    print("Decreasing learning rate from %f to %f" % (config.learning_rate, lr_rate))
-                    model.assign_lr(session, lr_rate)
-                    config.learning_rate = lr_rate
-                prev_cost = loss_value
+                # adjusting learning rate if overshoot. This creates discrimination!
+                # if prev_cost != 0 and loss_value - prev_cost > 2:
+                #     print("Cost at batch %d: %f increased from %f" % (batch_cnt, loss_value, prev_cost))
+                #     lr_rate = config.learning_rate * config.lr_decay
+                #     print("Decreasing learning rate from %f to %f" % (config.learning_rate, lr_rate))
+                #     model.assign_lr(session, lr_rate)
+                #     config.learning_rate = lr_rate
+                # prev_cost = loss_value
 
                 if batch_cnt % 100 == 0 and batch_cnt != 0:
                     summaries = session.run(model.summary_op,feed_dict=feed_dict)
@@ -402,7 +405,8 @@ def main(_):
 
             print("Saving model to %s" % save_path)
             sv.saver.save(session, save_path, global_step=sv.global_step)
-
+            print("Generating model to model/reddit_model.pb")
+            freeze_graph("checkpoints")
 
 def test_parser():
     config = Config()
