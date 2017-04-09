@@ -17,12 +17,12 @@ class Config(object):
     skip = 2
     hidden_size = 1024
     batch_size = 1024
-    max_steps = 50000
+    max_steps = 10000
     log_every = 100
-    save_every = 500
+    save_every = 2
     keep_prob = 0.5
-    learning_rate = 1.0
-    lr_decay = 0.8
+    learning_rate = 0.1
+    lr_decay = 0.95
     max_grad_norm = 5
     checkpoint_directory = 'checkpoints'
 
@@ -58,8 +58,8 @@ class WikiParser(object):
             self.sections.append(data[i:i + config.len_per_section])
             self.next_chars.append(data[i+1:i + config.len_per_section+1])
 
-        print("Example X: " + str(self.sections[5]))
-        print("Example Y: " + str(self.next_chars[5]))
+        print("Example X: " + str(self.sections[100]))
+        print("Example Y: " + str(self.next_chars[100]))
         print("Training data size: ", len(self.sections))
         print("Steps per epoch: ", int(len(self.sections) / config.batch_size))
 
@@ -83,6 +83,7 @@ class WikiParser(object):
         next_chars = self.next_chars
         batch_size = self.config.batch_size
         if self.cursor + batch_size - 1 > len(sections):
+            self.cursor = (self.cursor + batch_size - 1) - len(sections)
             return False
 
         # Vectorize input and output
@@ -238,7 +239,7 @@ def train():
     mode = FLAGS.mode
 
     graph = tf.Graph()
-    config = CPUConfig()
+    config = Config()
     gen_config = GenConfig()
     parser = WikiParser(config)
     parser.next_batch()
@@ -257,7 +258,7 @@ def train():
 
         gpu_config = tf.ConfigProto()
         gpu_config.gpu_options.allow_growth = True
-        save_path = '/home/tina/Scripts/python/RNN/checkpoints/'
+        save_path = '/home/tina/Scripts/python/RNN/checkpoints/model.ckpt'
         sv = tf.train.Supervisor(logdir='checkpoints', summary_op=None)
         with sv.managed_session(config=gpu_config) as session:
             session.run(model.initial_state)
@@ -265,6 +266,7 @@ def train():
             feed_dict = {}
             for step in range(config.max_steps):
                 while True:
+                    session.run(model.initial_state)
                     data = parser.next_batch()
                     if not data:
                         break
@@ -280,14 +282,12 @@ def train():
                 lr = lr * config.lr_decay
                 model.assign_lr(session, lr)
 
-                if step % 5 == 0:
-                    print('training loss at step %d: %.2f (%s)' % (step, loss_value, datetime.datetime.now()))
-                    summaries = session.run(model.summary_op, feed_dict=feed_dict)
-                    sv.summary_computed(session, summaries)
+                print('training loss at step %d: %.2f (%s)' % (step, loss_value, datetime.datetime.now()))
+                summaries = session.run(model.summary_op, feed_dict=feed_dict)
+                sv.summary_computed(session, summaries)
 
-                    if step % config.save_every == 0:
-                        print("Saving model to %s" % save_path)
-                        sv.saver.save(session, save_path, global_step=step)
+                print("Saving model to %s" % save_path)
+                sv.saver.save(session, save_path, global_step=step)
             print("Saving final model to %s" % save_path)
             sv.saver.save(session, save_path, global_step=sv.global_step)
 
