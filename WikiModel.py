@@ -40,7 +40,7 @@ class WikiParser(object):
 
     def __init__(self, config):
         self.config = config
-        data = open('data/wiki_data/wiki.test.tokens').read()
+        data = open('data/wiki_data/wiki.test.small.tokens').read()
         # self.valid = open('data/wiki_data/wiki.valid.tokens').read()
         # self.test = open('data/wiki_data/wiki.test.tokens').read()
         chars = sorted(list(set(data)))
