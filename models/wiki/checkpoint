@@ -1,2 +1,2 @@
-model_checkpoint_path: "-1"
-all_model_checkpoint_paths: "/home/tina/Scripts/python/RNN/models/wiki/-1"
+model_checkpoint_path: "/home/tina/Scripts/python/RNN/models/wiki/model.ckpt-424"
+all_model_checkpoint_paths: "/home/tina/Scripts/python/RNN/models/wiki/model.ckpt-424"

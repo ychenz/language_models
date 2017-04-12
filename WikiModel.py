@@ -2,7 +2,7 @@ import numpy as np
 import random
 import tensorflow as tf
 import math
-import datetime
+import time
 
 flags = tf.flags
 
@@ -14,14 +14,15 @@ FLAGS = flags.FLAGS
 
 class Config(object):
     len_per_section = 50
-    skip = 2
-    hidden_size = 1024
+    skip = 3
+    hidden_size = 256
+    num_layers = 2
     batch_size = 1024
-    max_steps = 10000
-    log_every = 100
+    max_steps = 500
+    log_every = 5
     save_every = 2
     keep_prob = 0.5
-    learning_rate = 0.1
+    learning_rate = 0.001
     lr_decay = 0.95
     max_grad_norm = 5
     checkpoint_directory = 'checkpoints'
@@ -113,13 +114,19 @@ class WikiModel(object):
     def __init__(self, config, len_per_section, char_size, is_training):
         batch_size = config.batch_size
         hidden_size = config.hidden_size
+        num_layers = config.num_layers
 
         with tf.variable_scope("LSTM"):
             with tf.variable_scope("Input"):
                 self._inputs = tf.placeholder(tf.float16, shape=(batch_size, len_per_section, char_size), name="inputs")
                 self._labels = tf.placeholder(tf.float16, shape=(batch_size, len_per_section, char_size), name="labels")
-            LSTMCell = tf.contrib.rnn.BasicLSTMCell(hidden_size)
-            cell = LSTMCell
+            lstm_cell = tf.contrib.rnn.BasicLSTMCell(hidden_size, state_is_tuple=True)
+            if is_training and config.keep_prob < 1:
+                attn_cell = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob=config.keep_prob)
+            else:
+                attn_cell = lstm_cell
+            cell = tf.contrib.rnn.MultiRNNCell([attn_cell for _ in range(num_layers)], state_is_tuple=True)
+
             self._initial_state = cell.zero_state(batch_size, tf.float16)
             outputs, state = tf.nn.dynamic_rnn(cell, self._inputs, initial_state=self._initial_state,)
             outputs = tf.reshape(outputs, [-1, hidden_size])
@@ -140,7 +147,7 @@ class WikiModel(object):
             return
 
         self._lr = tf.Variable(config.learning_rate, trainable=False)
-        optimizer = tf.train.GradientDescentOptimizer(self._lr)  # slightly larger epsilon to avoid numerical instability with zero moments with float16
+        optimizer = tf.train.AdamOptimizer(epsilon=1e-4)  # slightly larger epsilon to avoid numerical instability with zero moments with float16
         self._train_op = optimizer.minimize(self._cost)
         tf.summary.scalar("Training Loss", self._cost)
         tf.summary.scalar("Learning Rate", self._lr)
@@ -265,6 +272,11 @@ def train():
             lr = config.learning_rate
             feed_dict = {}
             for step in range(config.max_steps):
+                batch_cnt = 0
+                start_time = time.time()
+                costs = 0.0
+                iters = 0
+
                 while True:
                     session.run(model.initial_state)
                     data = parser.next_batch()
@@ -277,14 +289,19 @@ def train():
                         model.labels: labels
                     }
                     _, loss_value = session.run([model.train_op, model.cost], feed_dict)
-                    print(loss_value)
+                    batch_cnt += 1
+                    # print("Cost at batch %d: %f" % (batch_cnt, loss_value))
+                    costs += loss_value
+                    iters += config.len_per_section
 
-                lr = lr * config.lr_decay
-                model.assign_lr(session, lr)
+                # lr = lr * config.lr_decay
+                # model.assign_lr(session, lr)
 
-                print('training loss at step %d: %.2f (%s)' % (step, loss_value, datetime.datetime.now()))
+                print('training perplexity at step %d: %.2f speed: %.0f bpm cost: %.3f' %
+                      (step, np.exp(costs/batch_cnt), batch_cnt/float((time.time() - start_time)/60.0), costs/batch_cnt))
                 summaries = session.run(model.summary_op, feed_dict=feed_dict)
                 sv.summary_computed(session, summaries)
+
 
                 print("Saving model to %s" % save_path)
                 sv.saver.save(session, save_path, global_step=step)
