@@ -41,7 +41,7 @@ class WikiParser(object):
 
     def __init__(self, config):
         self.config = config
-        data = open('data/wiki_data/wiki.test.small.tokens').read()
+        data = open('data/wiki_data/wiki.test.tokens').read()
         # self.valid = open('data/wiki_data/wiki.valid.tokens').read()
         # self.test = open('data/wiki_data/wiki.test.tokens').read()
         chars = sorted(list(set(data)))
@@ -105,6 +105,22 @@ class WikiParser(object):
         self.cursor += self.config.batch_size
         return x, y
 
+    def next_random_batch(self):
+        sections = self.sections
+        next_chars = self.next_chars
+        batch_size = self.config.batch_size
+        x = np.zeros((batch_size, self.config.len_per_section, self.char_size))
+        y = np.zeros((batch_size, self.config.len_per_section, self.char_size))
+        random_idxs = np.random.randint(len(sections), size=batch_size)
+
+        for i, section in enumerate([sections[i] for i in random_idxs]):
+            for j, char in enumerate(section):
+                x[i, j, self.char2id[char]] = 1
+
+        for i, next_char in enumerate([next_chars[i] for i in random_idxs]):
+            for j, char in enumerate(next_char):
+                y[i, j, self.char2id[char]] = 1
+        return x, y
 
 class WikiModel(object):
     '''
@@ -201,7 +217,7 @@ def generating_text(model, parser, model_path='models/wiki'):
     input_checkpoint = checkpoint.model_checkpoint_path
     saver = tf.train.Saver()
 
-    test_start = 'I plan to make the world a better place '
+    test_start = 'A neural network consists of '
     with tf.Session() as session:
         saver.restore(session, input_checkpoint)
         state = session.run(model.initial_state)
@@ -266,45 +282,40 @@ def train():
         gpu_config = tf.ConfigProto()
         gpu_config.gpu_options.allow_growth = True
         save_path = '/home/tina/Scripts/python/RNN/checkpoints/model.ckpt'
-        sv = tf.train.Supervisor(logdir='checkpoints', summary_op=None)
+        sv = tf.train.Supervisor(logdir='/home/tina/Scripts/python/RNN/checkpoints', summary_op=None)
         with sv.managed_session(config=gpu_config) as session:
             session.run(model.initial_state)
             lr = config.learning_rate
             feed_dict = {}
-            for step in range(config.max_steps):
-                batch_cnt = 0
-                start_time = time.time()
-                costs = 0.0
-                iters = 0
 
-                while True:
-                    session.run(model.initial_state)
-                    data = parser.next_batch()
-                    if not data:
-                        break
-                    else:
-                        inputs, labels = data
-                    feed_dict = {
-                        model.inputs: inputs,
-                        model.labels: labels
-                    }
-                    _, loss_value = session.run([model.train_op, model.cost], feed_dict)
-                    batch_cnt += 1
-                    # print("Cost at batch %d: %f" % (batch_cnt, loss_value))
-                    costs += loss_value
-                    iters += config.len_per_section
+            start_time = time.time()
+            costs = 0.0
+            batch = 0
+            for batch_cnt in range(1000000):
+                session.run(model.initial_state)
+                inputs, labels = parser.next_random_batch()
+                feed_dict = {
+                    model.inputs: inputs,
+                    model.labels: labels
+                }
+                _, loss_value = session.run([model.train_op, model.cost], feed_dict)
+                # print("Cost at batch %d: %f" % (batch_cnt, loss_value))
+                costs += loss_value
+                batch += 1
 
                 # lr = lr * config.lr_decay
                 # model.assign_lr(session, lr)
+                if batch_cnt % 1000 == 0:
+                    print('training perplexity at batch %d: %.2f speed: %.0f bpm cost: %.3f' %
+                          (batch_cnt, np.exp(costs/batch), batch/float((time.time() - start_time)/60.0), costs/batch))
+                    start_time = time.time()
+                    costs = 0.0
+                    batch = 0
+                    summaries = session.run(model.summary_op, feed_dict=feed_dict)
+                    sv.summary_computed(session, summaries)  # step +116
 
-                print('training perplexity at step %d: %.2f speed: %.0f bpm cost: %.3f' %
-                      (step, np.exp(costs/batch_cnt), batch_cnt/float((time.time() - start_time)/60.0), costs/batch_cnt))
-                summaries = session.run(model.summary_op, feed_dict=feed_dict)
-                sv.summary_computed(session, summaries)
-
-
-                print("Saving model to %s" % save_path)
-                sv.saver.save(session, save_path, global_step=step)
+                    print("Saving model to %s" % save_path)
+                    sv.saver.save(session, save_path, global_step=batch_cnt)
             print("Saving final model to %s" % save_path)
             sv.saver.save(session, save_path, global_step=sv.global_step)
 

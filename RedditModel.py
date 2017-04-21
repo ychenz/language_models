@@ -53,7 +53,7 @@ class RedditParser(object):
     sentence_start_token = "SEN_START"
     sentence_end_token = "SEN_END"
 
-    def __init__(self,config,data_dir='data/reddit_data/'):
+    def __init__(self, config, data_dir='data/reddit_data/'):
         self.data_dir = data_dir
         self.config = config
         self.vocabulary_size = config.vocabulary_size
