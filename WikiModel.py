@@ -279,11 +279,11 @@ def train():
             with tf.variable_scope("Model", reuse=None, initializer=initializer):
                 model = WikiModel(config, config.len_per_section, parser.char_size, True)
 
-        gpu_config = tf.ConfigProto()
-        gpu_config.gpu_options.allow_growth = True
-        save_path = '/home/tina/Scripts/python/RNN/checkpoints/model.ckpt'
-        sv = tf.train.Supervisor(logdir='/home/tina/Scripts/python/RNN/checkpoints', summary_op=None)
-        with sv.managed_session(config=gpu_config) as session:
+    #    gpu_config = tf.ConfigProto()
+     #   gpu_config.gpu_options.allow_growth = True
+        save_path = '/home/yzhao/Scripts/python/reddit-rnn/checkpoints/model.ckpt'
+        sv = tf.train.Supervisor(logdir='/home/yzhao/Scripts/python/reddit-rnn/checkpoints', summary_op=None)
+        with sv.managed_session() as session:
             session.run(model.initial_state)
             lr = config.learning_rate
             feed_dict = {}
@@ -291,7 +291,7 @@ def train():
             start_time = time.time()
             costs = 0.0
             batch = 0
-            for batch_cnt in range(1000000):
+            for batch_cnt in range(10000):
                 session.run(model.initial_state)
                 inputs, labels = parser.next_random_batch()
                 feed_dict = {
@@ -305,7 +305,7 @@ def train():
 
                 # lr = lr * config.lr_decay
                 # model.assign_lr(session, lr)
-                if batch_cnt % 1000 == 0:
+                if batch_cnt % 100 == 0:
                     print('training perplexity at batch %d: %.2f speed: %.0f bpm cost: %.3f' %
                           (batch_cnt, np.exp(costs/batch), batch/float((time.time() - start_time)/60.0), costs/batch))
                     start_time = time.time()

@@ -11,7 +11,7 @@ import numpy as np
 import time
 import math
 
-from RedditModelReader import freeze_graph,load_vocab
+from RedditModelReader import freeze_graph, load_vocab
 
 # Download nltk corpus and tagger
 # nltk.download('punkt')
@@ -25,22 +25,23 @@ flags.DEFINE_string(
 
 FLAGS = flags.FLAGS
 
+
 class Config(object):
     vocabulary_size = 8000
-    batch_size = 40
+    batch_size = 50
     embedding_size = hidden_size = 200  # size of word's embedding vector
     num_layers = 2  # not used, single layer for now
     lr_decay = 0.5
     keep_prob = 0.5  # rate of keeping a neuron for dropout operation
 
-    init_scale = 0.1  #random uniform initializer
+    init_scale = 0.1  # random uniform initializer
 
     learning_rate = 0.5
     max_grad_norm = 5  # prevent exploding gradient issue
     max_epoch = 5
 
     def get_std(self):
-        return math.sqrt(2/self.vocabulary_size)
+        return math.sqrt(2 / self.vocabulary_size)
 
 
 class GenConfig(Config):
@@ -70,16 +71,17 @@ class RedditParser(object):
         self.create_vocab()
 
     def load_word2vector(self):
-        self.word2vector_model = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True) # take 3GB of memory
+        self.word2vector_model = gensim.models.KeyedVectors.load_word2vec_format(
+            'data/GoogleNews-vectors-negative300.bin', binary=True)  # take 3GB of memory
 
-    def tokenization(self,sentences_list):
+    def tokenization(self, sentences_list):
         '''
         Break sentences into words
         :param sentences_list:
         :return: list of words
         '''
         # print("Tokenizing all sentences using all CPUs ...")
-        pool = mp.Pool(processes=8)
+        pool = mp.Pool(processes=12)
         word_tokens = pool.map(nltk.tokenize.word_tokenize, sentences_list)
         pool.close()
         pool.join()
@@ -94,7 +96,8 @@ class RedditParser(object):
         '''
         # print("Tokenize comment to sentences")
         sentences = itertools.chain(*[nltk.sent_tokenize(body)])
-        sentences = ["%s %s %s" % (self.sentence_start_token, x, self.sentence_end_token) for x in sentences if len(x) < 300]  #0.5% of sentence has length >300 
+        sentences = ["%s %s %s" % (self.sentence_start_token, x, self.sentence_end_token) for x in sentences if
+                     len(x) < 300]  # 0.5% of sentence has length >300
         return sentences
 
     def create_vocab(self):
@@ -104,33 +107,34 @@ class RedditParser(object):
         sentence_end_token = self.sentence_end_token
 
         all_sentences = []
-        for path,subdir,files in os.walk(self.data_dir):
+        for path, subdir, files in os.walk(self.data_dir):
             # Parsing files
             for file in files:
                 if file.endswith(".gz"):
-                    file_path = os.path.join(path,file)
-                    with gzip.open(file_path,'rt') as f:
+                    file_path = os.path.join(path, file)
+                    with gzip.open(file_path, 'rt') as f:
                         raw_sententces = []
-                        reader = csv.reader(f,skipinitialspace=True)
+                        reader = csv.reader(f, skipinitialspace=True)
                         i = 0
                         for row in reader:
                             body = row[0]
                             raw_sententces.append(body.lower())
                             i += 1
-                            if i >= 50000: # for testing the graph with small data
-                               break
-                        pool = mp.Pool(processes=8)
+                            if i >= 50000:  # for testing the graph with small data
+                                break
+                        pool = mp.Pool(processes=12)
                         # split comments to sentences
                         all_sentences = pool.map(self._sent_tokenization, raw_sententces)
                         pool.close()
                         pool.join()
 
-                    break # only read 1 file for now
+                    break  # only read 1 file for now
             break
         # tokenize words in every sentence
         # example: ['SENTENCE_START', 'get', 'one', 'of', 'the', 'cheap', 'mustang', 'packages', '.', 'SENTENCE_END']
         # tokenized_sentences = [nltk.tokenize.word_tokenize(sent) for sent in all_sentences]
-        all_sentences = list(itertools.chain.from_iterable(all_sentences[1:])) # expand inner lists to single list,exclude 1st elemtent（tag）
+        all_sentences = list(itertools.chain.from_iterable(
+            all_sentences[1:]))  # expand inner lists to single list,exclude 1st elemtent（tag）
         tokenized_sentences = self.tokenization(all_sentences)
 
         # building dictionary for unique words and their count
@@ -139,8 +143,8 @@ class RedditParser(object):
         print("Using vocabulary size %d." % vocabulary_size)
 
         # only use the most frequent $vocabulary_size words
-        vocab = word_freq.most_common(vocabulary_size-1)
-        index_to_word = [unknown_token] # 'UNK' token at index[0]
+        vocab = word_freq.most_common(vocabulary_size - 1)
+        index_to_word = [unknown_token]  # 'UNK' token at index[0]
         tmp_index_to_word = [x[0] for x in vocab]
         index_to_word += tmp_index_to_word
         word_to_index = dict([(w, i) for i, w in enumerate(index_to_word)])
@@ -178,11 +182,10 @@ class RedditParser(object):
     def shuffle(self):
         shuffled_indices = np.arange(len(self.X))
         np.random.shuffle(shuffled_indices)
-        new_X = [ self.X[i] for i in shuffled_indices ]
-        new_Y = [ self.Y[i] for i in shuffled_indices ]
+        new_X = [self.X[i] for i in shuffled_indices]
+        new_Y = [self.Y[i] for i in shuffled_indices]
         self.X = new_X
         self.Y = new_Y
-
 
     def next_batch(self):
         '''
@@ -197,14 +200,14 @@ class RedditParser(object):
             return None
 
         unk_idx = self.word_to_index[self.unknown_token]
-        batch_x = [ self.X[i] for i in range(self.cursor,self.cursor + batch_size)]
-        batch_y = [ self.Y[i] for i in range(self.cursor,self.cursor + batch_size)]
+        batch_x = [self.X[i] for i in range(self.cursor, self.cursor + batch_size)]
+        batch_y = [self.Y[i] for i in range(self.cursor, self.cursor + batch_size)]
         self.cursor += batch_size
 
         # padding
         seq_len = []
-        maxlen =self.max_len
-        for sent_x,sent_y in zip(batch_x,batch_y):
+        maxlen = self.max_len
+        for sent_x, sent_y in zip(batch_x, batch_y):
             seq_len.append(len(sent_x))
             diff = maxlen - len(sent_x)
             sent_x += [unk_idx] * diff
@@ -213,10 +216,10 @@ class RedditParser(object):
             # which have the same value as the output of the dynamic RNN after the finish of the seq_len calculation
             sent_y += [unk_idx - 1] * diff
 
-        return batch_x,batch_y,seq_len
+        return batch_x, batch_y, seq_len
 
     @property
-    def get_word(self,id):
+    def get_word(self, id):
         return self.index_to_word[id]
 
     def featureSerializer(self):
@@ -224,15 +227,15 @@ class RedditParser(object):
 
 
 class RedditModel(object):
-
-    def __init__(self,config,is_training,max_len):
+    def __init__(self, config, is_training, max_len):
         self.config = config
         state_size = self.config.hidden_size
         keep_prob = self.config.keep_prob
         vocabulary_size = self.config.vocabulary_size
         batch_size = self.config.batch_size
 
-        self._seq_len = tf.placeholder(tf.int32, shape=(batch_size,), name="seq_len")  # holds length of each input sentence of the batch
+        self._seq_len = tf.placeholder(tf.int32, shape=(batch_size,),
+                                       name="seq_len")  # holds length of each input sentence of the batch
         self._inputs = tf.placeholder(tf.int32, shape=(batch_size, max_len), name="inputs")
         self._labels = tf.placeholder(tf.int32, shape=(batch_size, max_len), name="labels")
         # these lines are causing memory fragmentation, variable shape is causing lots of tensor reallocation
@@ -250,7 +253,8 @@ class RedditModel(object):
         else:
             cell = GRUCell
 
-        self._initial_state = cell.zero_state(batch_size, tf.float16)  # This created initial state across whole batch size,
+        self._initial_state = cell.zero_state(batch_size,
+                                              tf.float16)  # This created initial state across whole batch size,
         # equals op:  init_state = tf.get_variable('init_state', [1, hidden_size], initializer=tf.constant_initializer(0.0))
         # init_state = tf.tile(init_state, [batch_size, 1])
 
@@ -263,25 +267,27 @@ class RedditModel(object):
         if is_training and keep_prob < 1:
             inputs = tf.nn.dropout(inputs, keep_prob)
 
-        #  forward pass
+        # forward pass
         # rnn_outputs shape: [batch_size x max(seq_len) x state_size]  State shape: [batch_size x state_size]
         with tf.variable_scope("RNN"):
             rnn_outputs, state = tf.nn.dynamic_rnn(cell, inputs, sequence_length=self._seq_len,
                                                    initial_state=self._initial_state)
-        rnn_outputs = tf.reshape(tf.concat(axis=1, values=rnn_outputs), [-1, state_size])  # shape: [（batch_size*max(seq_len)）x state_size]
+        rnn_outputs = tf.reshape(tf.concat(axis=1, values=rnn_outputs),
+                                 [-1, state_size])  # shape: [（batch_size*max(seq_len)）x state_size]
         softmax_w = tf.get_variable(
             "softmax_w", [state_size, vocabulary_size], dtype=tf.float16)
         softmax_b = tf.get_variable("softmax_b", [vocabulary_size], dtype=tf.float16)
-        logits = tf.matmul(rnn_outputs, softmax_w) + softmax_b # logits shape: [batch_size*max(seq_len)）x state_size]
+        logits = tf.matmul(rnn_outputs, softmax_w) + softmax_b  # logits shape: [batch_size*max(seq_len)）x state_size]
 
         # predict
         with tf.variable_scope("Output"):
-            self._predictions = tf.nn.softmax(logits,name="Prediction")
+            self._predictions = tf.nn.softmax(logits, name="Prediction")
 
         # convert labels to one-hot vectors
         labels = tf.one_hot(tf.reshape(self._labels, [-1]), depth=vocabulary_size, axis=-1)
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels, name=None)
-        self._cost = cost = tf.reduce_sum(loss) / tf.reduce_sum(tf.cast(self._seq_len, tf.float16))  # average loss across all valid predictions
+        self._cost = cost = tf.reduce_sum(loss) / tf.reduce_sum(
+            tf.cast(self._seq_len, tf.float16))  # average loss across all valid predictions
         self._final_state = state
 
         if not is_training:
@@ -290,7 +296,8 @@ class RedditModel(object):
         self._lr = tf.Variable(config.learning_rate, trainable=False)
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars), config.max_grad_norm)
-        optimizer = tf.train.GradientDescentOptimizer(self._lr)  # slightly larger epsilon to avoid numerical instability with zero moments with float16
+        optimizer = tf.train.GradientDescentOptimizer(
+            self._lr)  # slightly larger epsilon to avoid numerical instability with zero moments with float16
         self._train_op = optimizer.apply_gradients(
             zip(grads, tvars))
 
@@ -379,7 +386,7 @@ def main(_):
         gpu_config = tf.ConfigProto()
         gpu_config.gpu_options.allow_growth = True
         save_path = '/home/tina/Scripts/python/RNN/checkpoints/'
-        sv = tf.train.Supervisor(logdir='checkpoints',summary_op=None)
+        sv = tf.train.Supervisor(logdir='checkpoints', summary_op=None)
         with sv.managed_session(config=gpu_config) as session:
 
             while reddit_parser.epoch < config.max_epoch:
@@ -419,7 +426,7 @@ def main(_):
                 # prev_cost = loss_value
 
                 if batch_cnt % 100 == 0 and batch_cnt != 0:
-                    summaries = session.run(model.summary_op,feed_dict=feed_dict)
+                    summaries = session.run(model.summary_op, feed_dict=feed_dict)
                     sv.summary_computed(session, summaries)
                     print("Cost at batch %d: %f" % (batch_cnt, loss_value))
                     print("Saving model to %s" % save_path)
@@ -446,11 +453,11 @@ def generating_text(model, n_sent=10, model_path='checkpoints'):
         text = ""
         count = 0
         while count < n_sent:
-            output_prob, state = session.run([model.predictions,model.final_state],
-                                       {model.input: mInput,
-                                        model.initial_state: state,
-                                        model.labels: np.matrix([[-1]]),
-                                        model.seq_len: [1]})
+            output_prob, state = session.run([model.predictions, model.final_state],
+                                             {model.input: mInput,
+                                              model.initial_state: state,
+                                              model.labels: np.matrix([[-1]]),
+                                              model.seq_len: [1]})
             word_idx = np.argmax(output_prob[0])
             if word_idx == 0:
                 # word_idx = np.argmax(output_prob[0][1:])
@@ -468,8 +475,9 @@ def generating_text(model, n_sent=10, model_path='checkpoints'):
 
         print(text)
 
-    # print("Generating model to model/reddit_model.pb")
-    # freeze_graph("checkpoints")
+        # print("Generating model to model/reddit_model.pb")
+        # freeze_graph("checkpoints")
+
 
 def test_parser():
     config = Config()
@@ -489,6 +497,7 @@ def test_parser():
     print(y)
     print(seq_len)
     print(reddit_parser.cursor)
+
 
 if __name__ == "__main__":
     # test_parser()
