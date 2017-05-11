@@ -45,7 +45,7 @@ class Config(object):
     num_layers = 2
     num_steps = 20
     sample_steps = 10
-    hidden_size = 512
+    hidden_size = 512  # 256 is no good
     max_epoch = 100
     max_max_epoch = 39
     keep_prob = 0.5
@@ -154,7 +154,7 @@ class WikiLanguageModel(object):
         model.add(LSTM(config.hidden_size, return_sequences=True))
         model.add(Dropout(config.keep_prob))
         model.add(TimeDistributed(Dense(config.vocab_size, activation='softmax')))
-        model.load_weights('weights-improvement-99-2.1466.hdf5')
+        # model.load_weights('weights-improvement-99-2.1466.hdf5')
         model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
         self.model = model
 
