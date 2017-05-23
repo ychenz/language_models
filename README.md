@@ -1,4 +1,4 @@
-# reddit-rnn
+# Language models
 ###Includes
 A Tensorflow rnn model trained on Reddit comment dataset
 
