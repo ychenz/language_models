@@ -13,3 +13,7 @@ Pre-trained word vectors are downloaded from [stanford Global Vectors](https://n
 ### Tuning tutorial
 
 https://machinelearningmastery.com/tune-lstm-hyperparameters-keras-time-series-forecasting/
+
+
+### Msic notes dataset
+https://magenta.tensorflow.org/datasets/nsynth
