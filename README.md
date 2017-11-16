@@ -22,3 +22,9 @@ https://magenta.tensorflow.org/datasets/nsynth
 ### Conversation  dataset
 
 https://datasets.maluuba.com/NewsQA/dl
+
+### Reading comprehension papers
+
+https://web.stanford.edu/class/cs224n/reports/2762029.pdf
+
+https://web.stanford.edu/class/cs224n/reports/2761845.pdf
