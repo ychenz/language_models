@@ -16,4 +16,9 @@ https://machinelearningmastery.com/tune-lstm-hyperparameters-keras-time-series-f
 
 
 ### Msic notes dataset
+
 https://magenta.tensorflow.org/datasets/nsynth
+
+### Conversation  dataset
+
+https://datasets.maluuba.com/NewsQA/dl
