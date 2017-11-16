@@ -28,3 +28,7 @@ https://datasets.maluuba.com/NewsQA/dl
 https://web.stanford.edu/class/cs224n/reports/2762029.pdf
 
 https://web.stanford.edu/class/cs224n/reports/2761845.pdf
+
+### R-NET implementation
+
+http://yerevann.github.io/2017/08/25/challenges-of-reproducing-r-net-neural-network-using-keras/
