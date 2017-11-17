@@ -42,3 +42,7 @@ https://research.googleblog.com/2017/11/sling-natural-language-frame-semantic.ht
 ### image multiple object recognition
 
 YOLO: https://arxiv.org/pdf/1612.08242.pdf
+
+### Image caption generator
+
+https://arxiv.org/pdf/1411.4555.pdf
