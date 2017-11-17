@@ -27,9 +27,11 @@ https://datasets.maluuba.com/NewsQA/dl
 
 https://web.stanford.edu/class/cs224n/reports/2762029.pdf
 
-https://web.stanford.edu/class/cs224n/reports/2761845.pdf
-
 https://arxiv.org/pdf/1609.05284.pdf
+
+#### Co-attention model made use of Glove embeddings
+
+https://web.stanford.edu/class/cs224n/reports/2761214.pdf
 
 #### Best SQuAD model: Interactive AoA Reader
 
