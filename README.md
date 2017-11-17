@@ -38,3 +38,7 @@ http://yerevann.github.io/2017/08/25/challenges-of-reproducing-r-net-neural-netw
 SLING: https://arxiv.org/pdf/1710.07032.pdf
 
 https://research.googleblog.com/2017/11/sling-natural-language-frame-semantic.html
+
+### image multiple object recognition
+
+YOLO: https://arxiv.org/pdf/1612.08242.pdf
