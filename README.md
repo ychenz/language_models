@@ -32,3 +32,9 @@ https://web.stanford.edu/class/cs224n/reports/2761845.pdf
 ### R-NET implementation
 
 http://yerevann.github.io/2017/08/25/challenges-of-reproducing-r-net-neural-network-using-keras/
+
+### Recent NLP advances
+
+SLING: https://arxiv.org/pdf/1710.07032.pdf
+
+https://research.googleblog.com/2017/11/sling-natural-language-frame-semantic.html
