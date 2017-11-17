@@ -31,6 +31,10 @@ https://web.stanford.edu/class/cs224n/reports/2761845.pdf
 
 https://arxiv.org/pdf/1609.05284.pdf
 
+#### Best SQuAD model: Interactive AoA Reader
+
+https://arxiv.org/pdf/1607.04423.pdf
+
 ### R-NET implementation
 
 http://yerevann.github.io/2017/08/25/challenges-of-reproducing-r-net-neural-network-using-keras/
