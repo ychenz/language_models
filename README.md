@@ -52,3 +52,7 @@ https://arxiv.org/pdf/1411.4555.pdf
 ### Performance analysis of deep learning tools
 
 https://arxiv.org/pdf/1608.07249.pdf
+
+### Deep learning book
+
+http://www.deeplearningbook.org/
