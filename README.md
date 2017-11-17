@@ -4,7 +4,7 @@ A Tensorflow rnn model trained on Reddit comment dataset
 
 A Keras rnn model trained on small wikipedia dataset
 
-Pre-trained word vectors are downloaded from [stanford Global Vectors](https://nlp.stanford.edu/projects/glove/)
+Pre-trained word vectors are downloaded from [stanford GloVe Vectors](https://nlp.stanford.edu/projects/glove/)
 
 ### Text generated
 > The meaning of life is hill . a a was was was infantry eugene and on and ) was was was a a 2 used species to lost . a the infantry used lost some and in and what were the what infantry and and : . but and of the what , and storm were the and in and , be 
