@@ -46,3 +46,7 @@ YOLO: https://arxiv.org/pdf/1612.08242.pdf
 ### Image caption generator
 
 https://arxiv.org/pdf/1411.4555.pdf
+
+### Performance analysis of deep learning tools
+
+https://arxiv.org/pdf/1608.07249.pdf
