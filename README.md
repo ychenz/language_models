@@ -62,3 +62,7 @@ https://arxiv.org/pdf/1608.07249.pdf
 ### Deep learning book
 
 http://www.deeplearningbook.org/
+
+### Optimization method discussion
+
+https://www.reddit.com/r/MachineLearning/comments/3i6fp9/what_optimization_methods_work_best_for_lstms/
