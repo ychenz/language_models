@@ -73,3 +73,7 @@ https://arxiv.org/pdf/1508.06615.pdf
 ### Natural language information encoding using RNN seq2seq model
 
 https://richliao.github.io/supervised/classification/2016/12/26/textclassifier-RNN/
+
+### Wikipedia dataset in chinese 
+
+https://dumps.wikimedia.org/zhwiki/latest/
