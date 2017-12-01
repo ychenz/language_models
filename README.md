@@ -69,3 +69,7 @@ https://www.reddit.com/r/MachineLearning/comments/3i6fp9/what_optimization_metho
 
 ### Character aware language model
 https://arxiv.org/pdf/1508.06615.pdf
+
+### Natural language information encoding using RNN seq2seq model
+
+https://richliao.github.io/supervised/classification/2016/12/26/textclassifier-RNN/
