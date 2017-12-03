@@ -77,3 +77,8 @@ https://richliao.github.io/supervised/classification/2016/12/26/textclassifier-R
 ### Wikipedia dataset in chinese 
 
 https://dumps.wikimedia.org/zhwiki/latest/
+
+
+### A tutorial on TimeDistributed layer of Keras for seq2seq
+
+https://stackoverflow.com/questions/42755820/how-to-use-return-sequences-option-and-timedistributed-layer-in-keras
