@@ -82,3 +82,7 @@ https://dumps.wikimedia.org/zhwiki/latest/
 ### A tutorial on TimeDistributed layer of Keras for seq2seq
 
 https://stackoverflow.com/questions/42755820/how-to-use-return-sequences-option-and-timedistributed-layer-in-keras
+
+### Conversational bot with consistent persenality research
+
+https://arxiv.org/pdf/1603.06155.pdf
