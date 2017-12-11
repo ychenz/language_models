@@ -83,6 +83,12 @@ https://dumps.wikimedia.org/zhwiki/latest/
 
 https://stackoverflow.com/questions/42755820/how-to-use-return-sequences-option-and-timedistributed-layer-in-keras
 
+
 ### Conversational bot with consistent persenality research
 
 https://arxiv.org/pdf/1603.06155.pdf
+
+### A collection of interesting dataset for many topics (Dec 11)
+
+https://www.kdnuggets.com/datasets/index.html
+http://freeconnection.blogspot.ca/2016/04/conversational-datasets-for-train.html
