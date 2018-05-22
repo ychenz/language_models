@@ -1,8 +1,8 @@
 # Language models
 ### Includes
-A Tensorflow rnn model trained on Reddit comment dataset
-
 A Keras rnn model trained on small wikipedia dataset
+
+A Tensorflow rnn model trained on Reddit comment datase
 
 Pre-trained word vectors are downloaded from [stanford GloVe Vectors](https://nlp.stanford.edu/projects/glove/)
 
